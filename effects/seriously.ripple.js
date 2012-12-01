@@ -5,7 +5,7 @@ window.Seriously = window.Seriously ||
 	{ plugin: function (name, opt) { this[name] = opt; } };
 
 //http://msdn.microsoft.com/en-us/library/bb313868(v=xnagamestudio.10).aspx
-Seriously.plugin('ripple', {
+Seriously.plugin('ripple', autowire({
 	shader: function(inputs, shaderSource, utilities) {
 		shaderSource.fragment = '#ifdef GL_ES\n\n' +
 			'precision mediump float;\n\n' +
@@ -55,6 +55,6 @@ Seriously.plugin('ripple', {
 	},
 	title: 'Ripple Distortion',
 	description: ''
-});
+}));
 
 }(window));

@@ -3398,6 +3398,88 @@ Seriously.util = {
 					'	float dx = mod(x, 0.01);\n' +
 					'	return clamp(0.1 + dx * 100.0, 0.0,1.0);\n' +
 					'}\n'
+	},
+
+	/***
+		Creates an appropriate HTML input for the given input.
+	
+		@param input {Object} the input from effect.inputs
+		@param inputContainer {DOMElement} Container to place the input element.
+		@param labelContainer {DOMElement} Optional. Container to put the label, if different from inputContainer.
+
+		@returns {DOMElement} The input element.
+	***/
+	createHTMLInput : function createHTMLInput(input, inputContainer, labelContainer) {
+		var element, 
+			option,
+			j,
+			label = document.createElement('label');
+
+		labelContainer = labelContainer || inputContainer;
+
+		label.setAttribute('for','input-' + name + '-' + i);
+		label.appendChild(document.createTextNode(input.title));
+		labelContainer.appendChild(label);
+
+
+		if (input.type === 'number') {
+			element = document.createElement('input');
+			if (input.min !== -Infinity && input.min !== undefined &&
+				input.max !== Infinity && input.max !== undefined) {
+				
+				element.setAttribute('type', 'range');
+				element.setAttribute('min', input.min);
+				element.setAttribute('max', input.max);
+			} else {
+				element.setAttribute('type', 'number');
+				if (input.min !== -Infinity && input.min !== undefined) {
+					element.setAttribute('min', input.min);
+				}
+				if (input.max !== Infinity && input.max !== undefined) {
+					element.setAttribute('max', input.max);
+				}
+			}
+			if (input.step && !isNaN(input.step) && input.step > 0) {
+				element.setAttribute('step', input.step);
+			} else {
+				element.setAttribute('step', 0.01);
+			}
+			element.value = input.defaultValue;
+		} else if (input.type === 'color') {
+			element = document.createElement('input');
+/*
+			element.addEventListener('click', function(e) {
+				e = e || window.event;
+				colorPicker(e);
+				colorPicker.cP.style.zIndex = 1;
+			}, false);
+*/
+			element.value = arrayToHex(input.defaultValue);
+		} else if (input.type === 'enum') {
+			element = document.createElement('select');
+			for (j = 0; j < input.options.length; j++) {
+				option = document.createElement('option');
+				if (input.options[j].length) {
+					option.value = input.options[j][0];
+					option.appendChild(document.createTextNode(input.options[j][1]));
+				} else {
+					option.value = input.options[j];
+					option.appendChild(document.createTextNode(input.options[j]));
+				}
+				element.appendChild(option);
+			}
+			element.value = input.defaultValue;
+		} else if (input.type === 'boolean') {
+			element = document.createElement('input');
+			element.setAttribute('type', 'checkbox');
+			element.checked = input.defaultValue;
+		} else {
+		}
+		
+		element.id = 'input-' + name + '-' + i;
+		inputContainer.appendChild(element);
+
+		return element;
 	}
 };
 
