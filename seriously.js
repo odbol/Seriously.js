@@ -2,7 +2,7 @@
 /*global Float32Array, Uint8Array, Uint16Array, WebGLTexture, HTMLInputElement, HTMLSelectElement, HTMLElement, WebGLFramebuffer, HTMLCanvasElement, WebGLRenderingContext */
 (function (window, undefined) {
 "use strict";
-
+ 
 var document = window.document,
 	console = window.console,
 
@@ -3383,6 +3383,9 @@ if (window.Seriously) {
 	}
 }
 
+// for createHTMLInput
+var curInputIdx = 0;
+
 //expose Seriously to the global object
 Seriously.util = {
 	checkSource: checkSource,
@@ -3409,16 +3412,17 @@ Seriously.util = {
 
 		@returns {DOMElement} The input element.
 	***/
-	createHTMLInput : function createHTMLInput(input, inputContainer, labelContainer) {
+	createHTMLInput : function createHTMLInput(input, name, inputContainer, labelContainer) {
 		var element, 
 			option,
 			j,
+			i = curInputIdx++,
 			label = document.createElement('label');
 
 		labelContainer = labelContainer || inputContainer;
 
 		label.setAttribute('for','input-' + name + '-' + i);
-		label.appendChild(document.createTextNode(input.title));
+		label.appendChild(document.createTextNode(input.title || name));
 		labelContainer.appendChild(label);
 
 
@@ -3474,7 +3478,10 @@ Seriously.util = {
 			element.setAttribute('type', 'checkbox');
 			element.checked = input.defaultValue;
 		} else {
-		}
+			//return false;
+			element = document.createElement('div');
+			inputContainer.style.display = labelContainer.style.display = 'none';
+		} 
 		
 		element.id = 'input-' + name + '-' + i;
 		inputContainer.appendChild(element);

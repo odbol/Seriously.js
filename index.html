@@ -29,7 +29,7 @@
 		body {
 			background-color: #aaa;
 		}
-		
+		 
 		</style>
 	</head>
 	<body>
@@ -109,9 +109,7 @@
 					table,
 					row,
 					cell,
-					label,
-					element,
-					option,
+					labelContainer,
 					i, j,
 					input,
 					obj,
@@ -149,73 +147,14 @@
 							row = document.createElement('tr');
 							table.appendChild(row);
 
-							cell = document.createElement('th');
-							row.appendChild(cell);
-
-							label = document.createElement('label');
-							label.setAttribute('for','input-' + name + '-' + i);
-							label.appendChild(document.createTextNode(input.title));
-							cell.appendChild(label);
+							labelContainer = document.createElement('th');
+							row.appendChild(labelContainer);
 
 							cell = document.createElement('td');
 							row.appendChild(cell);
 
-							if (input.type === 'number') {
-								element = document.createElement('input');
-								if (input.min !== -Infinity && input.min !== undefined &&
-									input.max !== Infinity && input.max !== undefined) {
-									
-									element.setAttribute('type', 'range');
-									element.setAttribute('min', input.min);
-									element.setAttribute('max', input.max);
-								} else {
-									element.setAttribute('type', 'number');
-									if (input.min !== -Infinity && input.min !== undefined) {
-										element.setAttribute('min', input.min);
-									}
-									if (input.max !== Infinity && input.max !== undefined) {
-										element.setAttribute('max', input.max);
-									}
-								}
-								if (input.step && !isNaN(input.step) && input.step > 0) {
-									element.setAttribute('step', input.step);
-								} else {
-									element.setAttribute('step', 0.01);
-								}
-								element.value = input.defaultValue;
-							} else if (input.type === 'color') {
-								element = document.createElement('input');
-/*
-								element.addEventListener('click', function(e) {
-									e = e || window.event;
-									colorPicker(e);
-									colorPicker.cP.style.zIndex = 1;
-								}, false);
-*/
-								element.value = arrayToHex(input.defaultValue);
-							} else if (input.type === 'enum') {
-								element = document.createElement('select');
-								for (j = 0; j < input.options.length; j++) {
-									option = document.createElement('option');
-									if (input.options[j].length) {
-										option.value = input.options[j][0];
-										option.appendChild(document.createTextNode(input.options[j][1]));
-									} else {
-										option.value = input.options[j];
-										option.appendChild(document.createTextNode(input.options[j]));
-									}
-									element.appendChild(option);
-								}
-								element.value = input.defaultValue;
-							} else if (input.type === 'boolean') {
-								element = document.createElement('input');
-								element.setAttribute('type', 'checkbox');
-								element.checked = input.defaultValue;
-							} else {
-							}
-							
-							element.id = 'input-' + name + '-' + i;
-							cell.appendChild(element);
+							element = Seriously.util.createHTMLInput(input, name, cell, labelContainer);
+
 							obj.effect[i] = element;
 						}
 					}
