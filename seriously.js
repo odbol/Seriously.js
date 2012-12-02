@@ -1214,8 +1214,70 @@ function Seriously(options) {
 			return s;
 		}
 
+
+		function makeListenersForVector(inputName, inputs) {
+			var vectorVars = ['x','y','s','t'],
+				inputMember, input, subLookup, i,		
+				lookup = {
+					subLookups : [],
+					compositeValue : {}
+				};
+
+			lookup.element = (function makeElementImposter(lookup) {
+						return {
+							// kind of a hack. just want the cleanup to still work.
+							removeEventListener : function (eventName, listener, something) {
+								for (var i = 0; i < lookup.subLookups.length; i++) {
+									var el = lookup.subLookups[i];
+									el.element.removeEventListener(eventName, el.listener, something);
+								}
+							}
+						};
+					})(lookup);
+
+			for (i = 0; i < inputs.length; i++) {
+				input = inputs[i];
+				inputMember = vectorVars[i];
+
+				lookup.compositeValue[inputMember] = input.value;
+
+				subLookup = {
+					element: input,
+					listener: (function (name, inputMember, element, compositeValue) {
+						return function() {
+							var oldValue, newValue;
+
+							oldValue = element.value;
+							compositeValue[inputMember] = oldValue;
+							newValue = me.setInput(name, compositeValue)[inputMember];
+
+							// no need for special case for color type since its always a number
+
+							//if input validator changes our value, update HTML Element
+							//todo: make this optional...somehow
+							if (newValue[inputMember] !== oldValue) {
+								element.value = newValue[inputMember];
+							}
+						};
+					}(inputName, inputMember, input, lookup.compositeValue))
+				};
+
+				input.addEventListener('change', subLookup.listener, true);
+				lookup.subLookups.push(subLookup);
+			}
+
+			me.inputElements[inputName] = lookup;
+
+			return lookup.compositeValue;
+		};
+
 		function setInput(inputName, input) {
-			var lookup, value, effectInput, i;
+			var lookup, value, effectInput, i,
+				destroyLookup = function destroyLookup(lookup) {
+					//var elements = lookup.element
+					lookup.element.removeEventListener('change', lookup.listener, true);
+					delete me.inputElements[inputName];
+				};
 
 			effectInput = me.effect.inputs[inputName];
 
@@ -1245,13 +1307,29 @@ function Seriously(options) {
 				//todo: color? date/time?
 			}
 
-			if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement) {
+			// ignore vectors of only one input and treat as a normal input. also makes using createHTMLInput() easier.
+			if (Array.isArray(input) && input.length === 1) {
+				input = input[0];
+			}
+
+
+			if (Array.isArray(input)) { // must be array of elements for a vector input
+
+				if (lookup && lookup.subLookups.length > 0 && 
+					lookup.subLookups[0].element !== input[0]) {
+					destroyLookup(lookup);
+					lookup = null;
+				}
+
+				if (!lookup) {
+					value = makeListenersForVector(inputName, input);
+				}
+			}
+			else if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement) {
 				value = input.value;
 
 				if (lookup && lookup.element !== input) {
-					lookup.element.removeEventListener('change', lookup.listener, true);
-					delete me.inputElements[inputName];
-					lookup = null;
+					destroyLookup(lookup);
 				}
 
 				if (!lookup) {
@@ -1283,8 +1361,7 @@ function Seriously(options) {
 				}
 			} else {
 				if (lookup) {
-					lookup.element.removeEventListener('change', lookup.listener, true);
-					delete me.inputElements[inputName];
+					destroyLookup();
 				}
 				value = input;
 			}
@@ -3384,7 +3461,19 @@ if (window.Seriously) {
 }
 
 // for createHTMLInput
-var curInputIdx = 0;
+var curInputIdx = 0,
+	arrayToHex = function arrayToHex(color) {
+		var i, val, s = '#';
+		for (i = 0; i < 4; i++) {
+			val = Math.min(255, Math.round(color[i] * 255 || 0));
+			val = val.toString(16);
+			if (val.length === 1) {
+				val = '0' + val;
+			}
+			s += val;
+		}
+		return s;
+	};
 
 //expose Seriously to the global object
 Seriously.util = {
@@ -3407,24 +3496,65 @@ Seriously.util = {
 		Creates an appropriate HTML input for the given input.
 	
 		@param input {Object} the input from effect.inputs
-		@param inputContainer {DOMElement} Container to place the input element.
-		@param labelContainer {DOMElement} Optional. Container to put the label, if different from inputContainer.
+		@param inputContainer {DOMElement} Container to place the input element. If false, the element(s) are returned unattached to any DOM element.
+		@param labelContainer {DOMElement} Optional. Container to put the label, if different from inputContainer. Set to false to disable label.
 
-		@returns {DOMElement} The input element.
+		@returns {DOMElement} Array of input elements (usually just 1 item, but could be 2 or more for vector inputs)
 	***/
 	createHTMLInput : function createHTMLInput(input, name, inputContainer, labelContainer) {
 		var element, 
 			option,
 			j,
+			subInput, vectorVars, dimensions,	k,
 			i = curInputIdx++,
-			label = document.createElement('label');
+			label ,
+			id = 'input-' + name + '-' + i;
 
-		labelContainer = labelContainer || inputContainer;
+		// do vectors one at a time
+		if (input.type === 'vector') {
+			dimensions = input.dimensions || 2;
+			vectorVars = ['x','y','s','t'];
+			var valueFields = ['defaultValue', 'min', 'max', 'step'],
+				elements = [];
 
-		label.setAttribute('for','input-' + name + '-' + i);
-		label.appendChild(document.createTextNode(input.title || name));
-		labelContainer.appendChild(label);
+			// separate into individual numbers
+			for (k = 0; k < dimensions; k++) {
+				subInput = extend({}, input);
+				subInput.type = 'number';
+				subInput.title = (input.title || name) + ' ' + vectorVars[k];
 
+
+				// boil down all defaultValue, etc. fields to a single number
+				for (var g = 0; g < valueFields.length; g++) {
+					var fieldName = valueFields[g];
+
+					//if (input[fieldName]) {
+						if (typeof input[fieldName] == 'object') {
+							subInput[fieldName] = input[fieldName][ vectorVars[k] ];
+						}
+					//}
+				}
+
+				element = createHTMLInput(subInput, name + '_' + vectorVars[k], inputContainer)[0];
+				elements.push(element);
+
+				inputContainer && inputContainer.appendChild(element);
+			}
+
+			return elements;
+		}
+
+
+		if (labelContainer !== false) {
+			labelContainer = labelContainer || inputContainer;
+
+			if (labelContainer) {
+				label = document.createElement('label')
+				label.setAttribute('for',id);
+				label.appendChild(document.createTextNode(input.title || name));
+				labelContainer.appendChild(label);
+			}
+		}
 
 		if (input.type === 'number') {
 			element = document.createElement('input');
@@ -3480,13 +3610,17 @@ Seriously.util = {
 		} else {
 			//return false;
 			element = document.createElement('div');
-			inputContainer.style.display = labelContainer.style.display = 'none';
+			inputContainer && inputContainer.style.display = 'none';
+
+			if (labelContainer !== false) {
+				labelContainer.style.display = 'none';
+			}
 		} 
 		
-		element.id = 'input-' + name + '-' + i;
-		inputContainer.appendChild(element);
+		element.id = id;
+		inputContainer && inputContainer.appendChild(element);
 
-		return element;
+		return [element];
 	}
 };
 

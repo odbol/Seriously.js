@@ -91,20 +91,7 @@
 			target.source = source;
 			s.go();
 			
-			select.addEventListener('change', function() {
-				function arrayToHex(color) {
-					var i, val, s = '#';
-					for (i = 0; i < 4; i++) {
-						val = Math.min(255, Math.round(color[i] * 255 || 0));
-						val = val.toString(16);
-						if (val.length === 1) {
-							val = '0' + val;
-						}
-						s += val;
-					}
-					return s;
-				}
-				
+			select.addEventListener('change', function() {			
 				var form,
 					table,
 					row,
@@ -153,9 +140,10 @@
 							cell = document.createElement('td');
 							row.appendChild(cell);
 
-							element = Seriously.util.createHTMLInput(input, name, cell, labelContainer);
+							elements = Seriously.util.createHTMLInput(input, name, cell, labelContainer);
 
-							obj.effect[i] = element;
+							// if they returned a vector send it along, otherwise strip it from the array.
+							obj.effect[i] = elements;
 						}
 					}
 	
