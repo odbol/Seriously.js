@@ -3121,19 +3121,22 @@ Seriously.plugin = function (hook, effect) {
 
 			input = effect.inputs[name];
 
-			if (isNaN(input.min)) {
+			// vectors have objects as min/max instead of numbers,
+			// so let's just assume plugin authors will define things correctly
+
+			if (typeof(input.min) === 'undefined') {
 				input.min = -Infinity;
 			}
 
-			if (isNaN(input.max)) {
+			if (typeof(input.max) === 'undefined') {
 				input.max = Infinity;
 			}
 
-			if (isNaN(input.minCount)) {
+			if (typeof(input.minCount) === 'undefined') {
 				input.minCount = -Infinity;
 			}
 
-			if (isNaN(input.maxCount)) {
+			if (typeof(input.maxCount) === 'undefined') {
 				input.maxCount = Infinity;
 			}
 
@@ -3610,7 +3613,7 @@ Seriously.util = {
 		} else {
 			//return false;
 			element = document.createElement('div');
-			inputContainer && inputContainer.style.display = 'none';
+			inputContainer && (inputContainer.style.display = 'none');
 
 			if (labelContainer !== false) {
 				labelContainer.style.display = 'none';

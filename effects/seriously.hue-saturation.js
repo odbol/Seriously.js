@@ -81,14 +81,14 @@ Seriously.plugin('hue-saturation', {
 			type: 'number',
 			uniform: 'hue',
 			defaultValue: 0,
-			min: -1,
+			min: 0,
 			max: 1
 		},
 		saturation: {
 			type: 'number',
 			uniform: 'saturation',
 			defaultValue: 0,
-			min: -1,
+			min: 0,
 			max: 1
 		}
 	},
