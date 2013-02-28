@@ -34,7 +34,8 @@ Seriously.plugin('vignette', {
 			type: 'number',
 			uniform: 'amount',
 			defaultValue: 1,
-			min: 0
+			min: 0,
+			max: 25
 		}
 	},
 	title: 'Vignette',
