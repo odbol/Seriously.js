@@ -1689,7 +1689,9 @@ function Seriously(options) {
 		if (dirty) {
 			for (i in this.sources) {
 				if (!effect.requires || effect.requires.call(this, i, this.inputs)) {
-					this.sources[i].render();
+					if (this.sources[i]) { // block against weird bug
+						this.sources[i].render();
+					}
 				}
 			}
 
